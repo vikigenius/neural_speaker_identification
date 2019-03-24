@@ -16,7 +16,6 @@ logger = logging.getLogger(__name__)
 class Trainer(object):
     def __init__(self, hparams, app_config, model: nn.Module):
         self.last_epoch = hparams.epochs
-        self.data_size = hparams.data_size
         self.save_format = app_config.save_format
         self.model = model
         self.learning_rate = hparams.learning_rate
@@ -35,7 +34,9 @@ class Trainer(object):
 
     def setup_optimizers(self, resume: bool):
         if resume:
-            raise NotImplementedError
+            self.optimizer = self.checkpoint['optimizer']
+            self.scheduler = self.checkpoint['scheduler']
+            self.epoch = self.checkpoint['epoch']
         else:
             self.optimizer = optim.Adam(
                 self.model.parameters(), lr=self.learning_rate,
@@ -60,7 +61,7 @@ class Trainer(object):
                     batch[k] = torch_utils.to_var(v)
 
             model_outs = self.model(batch)
-            upd, total = self.model.loss(batch, model_outs)
+            upd, total = self.model.loss(model_outs, batch)
 
             self.optimizer.zero_grad()
             total.backward()

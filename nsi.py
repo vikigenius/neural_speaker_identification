@@ -6,6 +6,7 @@ import click
 import collections
 from src.utils.params import Params
 from src.features.build_features import featuregen
+from src.models.train_model import train
 
 
 @click.group()
@@ -18,11 +19,12 @@ def main(ctx, config):
     ctx.obj.app_config = app_config
     ctx.obj.hparams = hparams
     with open('logging_config.yml') as fp:
-        log_cfg = yaml.load(fp)
+        log_cfg = yaml.safe_load(fp)
     logging.config.dictConfig(log_cfg)
 
 
 main.add_command(featuregen)
+main.add_command(train)
 
 
 if __name__ == '__main__':

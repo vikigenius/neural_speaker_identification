@@ -19,8 +19,9 @@ logger = logging.getLogger(__name__)
               help='Duration of Audio files to extract')
 @click.option('--verbose', '-v', is_flag=True, help='show debug output')
 @click.option('--progress', is_flag=True, help='Show Progress Bar')
+@click.option('--force', is_flag=True, help='Force overwrite spectrograms')
 @click.pass_context
-def featuregen(ctx, split, duration, verbose, progress):
+def featuregen(ctx, split, duration, verbose, progress, force):
     if verbose:
         logger.setLevel(logging.DEBUG)
 
@@ -34,14 +35,21 @@ def featuregen(ctx, split, duration, verbose, progress):
     specgen = Spectrum(hparams)
 
     dset_list = []
+    mapfile_name = app_config.map_file.format(split)
+    if not force and os.path.exists(mapfile_name):
+        with open(mapfile_name, 'rb') as f:
+            dset_list = pickle.load(f)
 
     if progress and not verbose:
         audio_files = tqdm(audio_files)
     fcount = 0
     for cid, audio_file in audio_files:
+        fname = os.path.splitext(audio_file)[0] + '.npy'
+        if not force and os.path.isfile(fname):
+            continue
+
         fcount += 1
         spec = specgen.generate(audio_file)
-        fname = os.path.splitext(audio_file)[0] + '.npy'
         np.save(fname, spec)
         dset_list.append((cid, fname))
         logger.debug(

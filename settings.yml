@@ -2,8 +2,17 @@ defaults:
   data_dir: 'data/raw/{}'
   feature_path: 'data/interim/{}_feat.h5'
   map_file: 'data/interim/{}_map.pkl'
+  save_path: 'models/checkpoints/{}'
+  save_format: '%Y-%b-%d-%H:%M:%S'
 hparams:
   window_size: 25
   window_shift: 10
   window_type: 'hann'
+  num_workers: 1
   sample_freq: 16000
+  l2_coeff: 0.01
+  num_classes: 5994
+  batch_size: 32
+  learning_rate: 0.001
+  epochs: 20
+  sched_decay: 0.9
