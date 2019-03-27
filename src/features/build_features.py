@@ -7,22 +7,18 @@ import pickle
 from tqdm import tqdm
 import numpy as np
 from src.features.spectrum import Spectrum
-from src.data.dataset import M4AStreamer
+from src.data.dataset import M4AStreamer, SInfo
 
 
 logger = logging.getLogger(__name__)
 
 
 def validate_gen(specgen, min_dur, audio_file):
-    spec1, spec2 = specgen.generate(audio_file)
-    if spec1.shape[1] < min_dur:
+    spec = specgen.generate(audio_file)
+    if spec.shape[1] < min_dur:
         logger.warn(
-            f'Shape Mismatch for spec1 = {spec1.shape} in {audio_file}')
-    if spec2 is not None:
-        if spec2.shape[1] < min_dur:
-            logger.warn(
-                f'Shape Mismatch for spec2 = {spec2.shape} in {audio_file}')
-    return spec1, spec2
+            f'Shape Mismatch for spec1 = {spec.shape} in {audio_file}')
+    return spec
 
 
 @click.command()
@@ -63,28 +59,22 @@ def featuregen(ctx, dataset, split, duration, verbose, progress, rebuild,
 
     min_dur = 301
 
-    for cid, audio_file in audio_files:
-        fname_base = os.path.splitext(audio_file)[0]
-        fname_1 = fname_base + '_1.npy'
-        fname_2 = fname_base + '_2.npy'
-        if not force and os.path.isfile(fname_1):
+    for cid, gid, audio_file in audio_files:
+        fname = os.path.splitext(audio_file)[0] + '.npy'
+        if not force and os.path.isfile(fname):
             if rebuild:
-                dset_list.append(fname_1)
+                dset_list.append(fname)
             continue
 
         fcount += 1
 
-        spec1, spec2 = validate_gen(specgen, min_dur, audio_file)
+        spec1 = validate_gen(specgen, min_dur, audio_file)
 
-        np.save(fname_1, spec1)
-        dset_list.append((cid, fname_1))
-
-        if spec2 is not None:
-            np.save(fname_2, spec2)
-            dset_list.append((cid, fname_2))
+        np.save(fname, spec1)
+        dset_list.append(SInfo(cid, gid, fname))
 
         logger.debug(
-            f'{spec1.shape} Spectrogram created in {fname_1} for id {cid}')
+            f'{spec1.shape} Spectrogram created in {fname} for id {cid}')
         if not progress and (fcount + 1) % 50000 == 0:
             logger.info(f'{fcount} spectrograms created')
     mapfile_name = app_config.map_file.format(split)

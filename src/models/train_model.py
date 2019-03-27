@@ -27,13 +27,16 @@ def validate(hparams, dataset, model, progress):
         for k, v in batch.items():
             if torch.is_tensor(v):
                 batch[k] = torch_utils.to_var(v)
-
+        if model.num_classes == 2:
+            target = batch['gid']
+        else:
+            target = batch['cid']
         with torch.no_grad():
             logits = model(batch)
             pred = logits.argmax(1)
-            loss = CeLoss(logits, batch['cid'])
-            correctness.append(pred == batch['cid'])
-    acc = torch.stack(correctness).to(torch.float).mean()
+            loss = CeLoss(logits, target)
+            correctness.append(pred == target)
+    acc = torch.cat(correctness).to(torch.float).mean()
     print('Validation finished')
     logger.info(f'Validation Acc = {acc}, Loss = {loss}')
 
@@ -41,10 +44,14 @@ def validate(hparams, dataset, model, progress):
 @click.command()
 @click.option('--resume', is_flag=True, help='Resume trainging from last ckpt')
 @click.option('--progress', is_flag=True, help='Show progress bar')
+@click.option('--gender', is_flag=True, help='Train Gender Classifier')
 @click.pass_context
-def train(ctx, resume, progress):
+def train(ctx, resume, progress, gender):
     app_config = ctx.obj.app_config
     hparams = ctx.obj.hparams
+
+    if gender:
+        setattr(hparams, 'num_classes', 2)
 
     setattr(app_config, 'progress', progress)
 

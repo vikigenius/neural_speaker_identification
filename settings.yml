@@ -19,3 +19,4 @@ hparams:
   sched_decay: 0.9
   val_step: 500
   val_start: 499
+  preprocess: False

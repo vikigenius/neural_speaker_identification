@@ -14,7 +14,7 @@ class Spectrum(object):
     def __init__(self, hparams):
         self.sample_freq = hparams.sample_freq
         self.duration = hparams.duration
-
+        self.preprocess = hparams.preprocess
         self.Tw = hparams.window_size
         self.Ts = hparams.window_shift
         self.win_type = hparams.window_type
@@ -41,21 +41,12 @@ class Spectrum(object):
         """
         # Load the file
         duration = librosa.get_duration(filename=afile)
-        data2 = None
         if duration <= 3.1:
             logger.warn(f'Duration < 3.1 for {afile}')
-        if duration >= 6:
-            data, _ = librosa.load(afile, sr=self.sample_freq, mono=True)
-            n1c = int(self.duration*self.sample_freq)
-            data1 = data[:n1c]
-            data2 = data[-n1c:]
-        else:
-            roffset = uniform(0.0, duration - 3.1)
-            data, _ = librosa.load(afile, sr=self.sample_freq, mono=True,
-                                   offset=roffset, duration=self.duration)
-            data1 = data
-            data2 = None
-        return data1, data2
+        roffset = uniform(0.0, duration - 3.1)
+        data, _ = librosa.load(afile, sr=self.sample_freq, mono=True,
+                               offset=roffset, duration=self.duration)
+        return data
 
     def _preprocess(self, signal):
         # Remove DC component and add a small dither
@@ -79,12 +70,10 @@ class Spectrum(object):
         Returns:
             numpy.ndarray
         """
-        resampled1, resampled2 = self._resample_audio(afile)
-        preprocessed1 = self._preprocess(resampled1)
-        if resampled2 is not None:
-            preprocessed2 = preprocessed2 = self._preprocess(resampled2)
-        else:
-            preprocessed2 = None
+        resampled = self._resample_audio(afile)
+        preprocessed = resampled
+        if self.preprocess:
+            preprocessed = self._preprocess(resampled)
 
         # sfft
 
@@ -95,13 +84,6 @@ class Spectrum(object):
         Nw = round(1e-3*Tw*sf)
         Ns = round(1e-3*Ts*sf)
         n_fft = 2**nextpow2(Nw)
-        spec1 = librosa.core.stft(preprocessed1, n_fft=n_fft, hop_length=Ns,
+        spec1 = librosa.core.stft(preprocessed, n_fft=n_fft, hop_length=Ns,
                                   win_length=Nw, window=self.win_type)
-        if preprocessed2 is not None:
-            spec2 = librosa.core.stft(preprocessed2, n_fft=n_fft,
-                                      hop_length=Ns,
-                                      win_length=Nw, window=self.win_type)
-            aspec2 = np.abs(spec2)
-        else:
-            aspec2 = None
-        return np.abs(spec1), aspec2
+        return np.abs(spec1)

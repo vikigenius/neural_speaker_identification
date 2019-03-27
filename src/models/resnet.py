@@ -34,7 +34,10 @@ class ResnetM(nn.Module):
         return self.base(input_mat)
 
     def loss(self, model_outs, batch):
-        target = batch['cid']
+        if self.num_classes == 2:
+            target = batch['gid']
+        else:
+            target = batch['cid']
         loss = self.criterion(model_outs, target)
         metric = CELoss(loss, 1)
         return metric, loss
