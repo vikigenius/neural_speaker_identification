@@ -41,13 +41,24 @@ class Spectrum(object):
         """
         # Load the file
         duration = librosa.get_duration(filename=afile)
-        roffset = uniform(0.0, duration - 3.0)
-        data, _ = librosa.load(afile, sr=self.sample_freq, mono=True,
-                               offset=roffset, duration=self.duration)
-        return data
+        data2 = None
+        if duration <= 3.1:
+            logger.warn(f'Duration < 3.1 for {afile}')
+        if duration >= 6:
+            data, _ = librosa.load(afile, sr=self.sample_freq, mono=True)
+            n1c = int(self.duration*self.sample_freq)
+            data1 = data[:n1c]
+            data2 = data[-n1c:]
+        else:
+            roffset = uniform(0.0, duration - 3.1)
+            data, _ = librosa.load(afile, sr=self.sample_freq, mono=True,
+                                   offset=roffset, duration=self.duration)
+            data1 = data
+            data2 = None
+        return data1, data2
 
     def _preprocess(self, signal):
-        # Remove DC component and add a small deither
+        # Remove DC component and add a small dither
         signal = scipy.signal.lfilter([1, -1], [1, -self.dc_alpha], signal)
         dither = np.random.random_sample(
             signal.shape) + np.random.random_sample(
@@ -61,14 +72,19 @@ class Spectrum(object):
     def generate(self, afile: str):
         """
         Takes in a string path afile and returns a numpy nd array
-        representing the macgnitude spectrum of the signal
+        representing the magnitude spectrum of the signal
 
         Args:
             afile: path of audio file
         Returns:
             numpy.ndarray
         """
-        resampled = self._resample_audio(afile)
+        resampled1, resampled2 = self._resample_audio(afile)
+        preprocessed1 = self._preprocess(resampled1)
+        if resampled2 is not None:
+            preprocessed2 = preprocessed2 = self._preprocess(resampled2)
+        else:
+            preprocessed2 = None
 
         # sfft
 
@@ -79,6 +95,13 @@ class Spectrum(object):
         Nw = round(1e-3*Tw*sf)
         Ns = round(1e-3*Ts*sf)
         n_fft = 2**nextpow2(Nw)
-        spec = librosa.core.stft(resampled, n_fft=n_fft, hop_length=Ns,
-                                 win_length=Nw, window=self.win_type)
-        return np.abs(spec)
+        spec1 = librosa.core.stft(preprocessed1, n_fft=n_fft, hop_length=Ns,
+                                  win_length=Nw, window=self.win_type)
+        if preprocessed2 is not None:
+            spec2 = librosa.core.stft(preprocessed2, n_fft=n_fft,
+                                      hop_length=Ns,
+                                      win_length=Nw, window=self.win_type)
+            aspec2 = np.abs(spec2)
+        else:
+            aspec2 = None
+        return np.abs(spec1), aspec2

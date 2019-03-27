@@ -10,14 +10,14 @@ class CELoss:
     num_obs: int = 0
 
     def update(self, loss: 'CELoss'):
-        ce_loss = loss.bce_loss
+        ce_loss = loss.ce_loss
         n = self.num_obs
         self.num_obs += 1
-        self.ce_loss = self.bce_loss*(n/(n+1)) + ce_loss/(n+1)
+        self.ce_loss = self.ce_loss*(n/(n+1)) + ce_loss/(n+1)
 
     def pbardict(self):
         return {
-            'ce_loss': format(self.bce_loss, '.4f')
+            'ce_loss': format(self.ce_loss, '.4f')
         }
 
 
@@ -28,8 +28,6 @@ class ResnetM(nn.Module):
         self.base = resnet50(num_classes=self.num_classes)
         self.criterion = nn.CrossEntropyLoss()
         self.loss_obj = CELoss
-        self.base.conv1 = nn.Conv2d(1, 64, kernel_size=7, stride=2, padding=3,
-                                    bias=False)
 
     def forward(self, batch):
         input_mat = batch['sgram'].unsqueeze(1)
