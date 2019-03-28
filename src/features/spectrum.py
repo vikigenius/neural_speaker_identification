@@ -3,7 +3,7 @@ import logging
 import numpy as np
 import librosa
 import scipy
-from random import uniform
+from random import randint
 from src.utils.math_utils import nextpow2
 
 
@@ -28,25 +28,46 @@ class Spectrum(object):
 
         self.pe_alpha = 0.97
 
-    def _resample_audio(self, afile: str) -> np.ndarray:
+    def _sample(self, signal, seqlen: int):
         """
-        Takes in a string path afile and returns a numpy nd array
+        Helper function to sample a contiguos subsequence of
+        length seqlen from signal
+        Args:
+            signal: numpy.ndarray, the signal
+            seqlen: int, the sequence length
+        Returns:
+            numpy.ndarray, the sampled signal
+        """
+        nframes = len(signal)
+        roffset = randint(0, nframes - seqlen)
+        sampled = signal[roffset:roffset+seqlen]
+        return sampled
+
+    def _get_resampled_chunks(self, afile: str):
+        """
+        Takes in a string path afile and returns chunks of audio each
         representing a 16-bit mono channel with sampling rate = 16000
-        after truncating the audio according to self.duration
 
         Args:
             afile: path of audio file
         Returns:
-            numpy.ndarray
+            List[np.ndarray]
         """
         # Load the file
-        duration = librosa.get_duration(filename=afile)
-        if duration <= 3.1:
-            logger.warn(f'Duration < 3.1 for {afile}')
-        roffset = uniform(0.0, duration - 3.1)
-        data, _ = librosa.load(afile, sr=self.sample_freq, mono=True,
-                               offset=roffset, duration=self.duration)
-        return data
+        signal, _ = librosa.load(afile, sr=self.sample_freq, mono=True)
+        nframes = len(signal)
+        duration = nframes/self.sample_freq
+        if duration <= self.duration:
+            logger.warn(f'Duration less than specified for {afile}')
+        chunks = []
+        if duration > 2*self.duration:
+            # Can sample 2 chunks
+            chunks.append(signal[:nframes/2])
+            chunks.append(signal[nframes/2:])
+        else:
+            chunks.append(signal)
+        chunks = [self._sample(chunk) for chunk in chunks]
+        return chunks
 
     def _preprocess(self, signal):
         # Remove DC component and add a small dither
@@ -70,12 +91,13 @@ class Spectrum(object):
         Returns:
             numpy.ndarray
         """
-        resampled = self._resample_audio(afile)
-        preprocessed = resampled
+        resampled_chunks = self._get_resampled_chunks(afile)
         if self.preprocess:
-            preprocessed = self._preprocess(resampled)
+            processed = [self._preprocess(chunk) for chunk in resampled_chunks]
+        else:
+            processed = resampled_chunks
 
-        # sfft
+        # stft
 
         sf = self.sample_freq
         Tw = self.Tw  # Window size
@@ -84,6 +106,10 @@ class Spectrum(object):
         Nw = round(1e-3*Tw*sf)
         Ns = round(1e-3*Ts*sf)
         n_fft = 2**nextpow2(Nw)
-        spec1 = librosa.core.stft(preprocessed, n_fft=n_fft, hop_length=Ns,
-                                  win_length=Nw, window=self.win_type)
-        return np.abs(spec1)
+
+        spectrograms = [librosa.core.stft(
+            chunk, n_fft=n_fft,
+            hop_length=Ns, win_length=Nw,
+            window=self.win_type) for chunk in processed]
+        mag_specs = [np.abs(chunk) for chunk in spectrograms]
+        return mag_specs

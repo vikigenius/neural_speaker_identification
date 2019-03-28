@@ -1,6 +1,5 @@
 defaults:
-  data_dir: 'data/raw/{}/{}'
-  feature_path: 'data/interim/{}_feat.h5'
+  data_dir: 'data/raw/'
   map_file: 'data/interim/{}_map.pkl'
   save_path: 'models/checkpoints/{}'
   save_format: '%Y-%b-%d-%H:%M:%S'
