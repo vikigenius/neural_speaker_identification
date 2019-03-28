@@ -1,21 +1,29 @@
 defaults:
-  data_dir: 'data/raw/'
-  map_file: 'data/interim/{}_map.pkl'
+  data_dir:
+    VoxCeleb1: 'data/raw/VoxCeleb1'
+    VoxCeleb2: 'data/raw/VoxCeleb2'
+  map_file:
+    VoxCeleb1: 'data/interim/VoxCeleb1/{}_map.pkl'
+    VoxCeleb2: 'data/interim/VoxCeleb2/{}_map.pkl'
+  meta_file:
+    VoxCeleb1: 'data/raw/VoxCeleb1/vox1_meta.csv'
+    VoxCeleb2: 'data/raw/VoxCeleb1/vox2_meta.csv'
   save_path: 'models/checkpoints/{}'
   save_format: '%Y-%b-%d-%H:%M:%S'
+  num_classes: 1251
 hparams:
   window_size: 25
   window_shift: 10
   window_type: 'hann'
   num_workers: 1
   sample_freq: 16000
-  l2_coeff: 0.001
-  num_classes: 1252
+  l2_coeff: 0.0001
+  num_classes: 1251
   batch_size: 32
-  learning_rate: 0.0001
+  learning_rate: 0.005
   epochs: 30
   adam_eps: 0.001
-  sched_decay: 0.9
+  sched_decay: 0.63095
   val_step: 500
   val_start: 499
-  preprocess: False
+  preprocess: True

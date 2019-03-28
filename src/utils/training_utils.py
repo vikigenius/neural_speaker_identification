@@ -77,7 +77,7 @@ class Trainer(object):
             if (step + self.val_ofs) % self.val_step == 0:
                 if validator:
                     self.model.eval()
-                    validator()
+                    validator(full=False)
                     self.model.train()
             for k, v in batch.items():
                 if torch.is_tensor(v):

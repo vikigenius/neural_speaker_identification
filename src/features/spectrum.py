@@ -62,11 +62,13 @@ class Spectrum(object):
         chunks = []
         if duration > 2*self.duration:
             # Can sample 2 chunks
-            chunks.append(signal[:nframes/2])
-            chunks.append(signal[nframes/2:])
+            mid = int(nframes/2)
+            chunks.append(signal[:mid])
+            chunks.append(signal[mid:])
         else:
             chunks.append(signal)
-        chunks = [self._sample(chunk) for chunk in chunks]
+        num_samples = int(self.duration*self.sample_freq)
+        chunks = [self._sample(chunk, num_samples) for chunk in chunks]
         return chunks
 
     def _preprocess(self, signal):

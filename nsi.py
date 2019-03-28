@@ -7,6 +7,7 @@ import collections
 from src.utils.params import Params
 from src.features.build_features import featuregen
 from src.models.train_model import train
+from src.data.make_dataset import split
 
 
 @click.group()
@@ -25,6 +26,7 @@ def main(ctx, config):
 
 main.add_command(featuregen)
 main.add_command(train)
+main.add_command(split)
 
 
 if __name__ == '__main__':

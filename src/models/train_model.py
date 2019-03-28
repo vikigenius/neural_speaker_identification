@@ -3,7 +3,7 @@ import click
 import torch
 import logging
 from functools import partial
-from torch.utils.data import DataLoader, RandomSampler
+from torch.utils.data import DataLoader
 from src.data.dataset import Spectrogram
 from src.utils import training_utils
 from src.utils import torch_utils
@@ -13,11 +13,12 @@ from src.models.resnet import ResnetM
 logger = logging.getLogger(__name__)
 
 
-def validate(hparams, dataset, model, progress):
+def validate(hparams, dataset, model, progress, full=True):
     logger.info('Performing Valitation')
     data_loader = DataLoader(
         dataset=dataset,
         batch_size=hparams.batch_size,
+        shuffle=not full,
         num_workers=hparams.num_workers
     )
     correctness = []
@@ -36,17 +37,20 @@ def validate(hparams, dataset, model, progress):
             pred = logits.argmax(1)
             loss = CeLoss(logits, target)
             correctness.append(pred == target)
+        if not full:
+            break
     acc = torch.cat(correctness).to(torch.float).mean()
-    print('Validation finished')
     logger.info(f'Validation Acc = {acc}, Loss = {loss}')
 
 
 @click.command()
+@click.option('--dataset', default='VoxCeleb1',
+              type=click.Choice(['VoxCeleb1', 'VoxCeleb2']))
 @click.option('--resume', is_flag=True, help='Resume trainging from last ckpt')
 @click.option('--progress', is_flag=True, help='Show progress bar')
 @click.option('--gender', is_flag=True, help='Train Gender Classifier')
 @click.pass_context
-def train(ctx, resume, progress, gender):
+def train(ctx, dataset, resume, progress, gender):
     app_config = ctx.obj.app_config
     hparams = ctx.obj.hparams
 
@@ -55,15 +59,14 @@ def train(ctx, resume, progress, gender):
 
     setattr(app_config, 'progress', progress)
 
-    train_map_file = app_config.map_file.format('train')
-    test_map_file = app_config.map_file.format('test')
+    train_map_file = app_config.map_file[dataset].format('train')
+    test_map_file = app_config.map_file[dataset].format('test')
     dataset = Spectrogram(train_map_file, 'train')
 
-    train_sampler = RandomSampler(dataset)
     data_loader = DataLoader(
         dataset=dataset,
         batch_size=hparams.batch_size,
-        sampler=train_sampler,
+        shuffle=True,
         num_workers=hparams.num_workers
     )
 
