@@ -3,8 +3,8 @@ defaults:
     VoxCeleb1: 'data/raw/VoxCeleb1'
     VoxCeleb2: 'data/raw/VoxCeleb2'
   map_file:
-    VoxCeleb1: 'data/interim/VoxCeleb1/{}_map.pkl'
-    VoxCeleb2: 'data/interim/VoxCeleb2/{}_map.pkl'
+    VoxCeleb1: 'data/interim/VoxCeleb1/{}_{}_map.pkl'
+    VoxCeleb2: 'data/interim/VoxCeleb2/{}_{}_map.pkl'
   meta_file:
     VoxCeleb1: 'data/raw/VoxCeleb1/vox1_meta.csv'
     VoxCeleb2: 'data/raw/VoxCeleb1/vox2_meta.csv'

@@ -14,11 +14,12 @@ logger = logging.getLogger(__name__)
 @click.command()
 @click.option('--dataset', default='VoxCeleb1',
               type=click.Choice(['VoxCeleb1', 'VoxCeleb2']))
+@click.option('--raw', is_flag=True, help='Split the raw samples')
 @click.option('--verbose', '-v', is_flag=True, help='show debug output')
 @click.option('--progress', is_flag=True, help='Show Progress Bar')
 @click.option('--force', is_flag=True, help='Force overwrite spectrograms')
 @click.pass_context
-def split(ctx, dataset, verbose, progress, force):
+def split(ctx, dataset, raw, verbose, progress, force):
     if verbose:
         logger.setLevel(logging.DEBUG)
 
@@ -26,10 +27,18 @@ def split(ctx, dataset, verbose, progress, force):
     num_classes = app_config.num_classes
 
     data_dir = app_config.data_dir[dataset]
-    sgram_files = data_utils.M4AStreamer(data_dir, extensions=['.npy'])
+
+    if raw:
+        extensions = ['.wav']
+        file_type = 'raw'
+    else:
+        extensions = ['.npy']
+        file_type = 'sgram'
+
+    data_files = data_utils.M4AStreamer(data_dir, extensions=extensions)
 
     if progress and not verbose:
-        sgram_files = tqdm(sgram_files)
+        data_files = tqdm(data_files)
 
     idmap = [None]*num_classes
 
@@ -40,7 +49,7 @@ def split(ctx, dataset, verbose, progress, force):
     meta_info = pd.read_csv(meta_file, delim_whitespace=True)
     meta_info = meta_info.set_index('ID')
 
-    for sgramfile in sgram_files:
+    for sgramfile in data_files:
         cid = data_utils.get_cid(sgramfile)
         thash = data_utils.get_hash(sgramfile)
         if idmap[cid] is None:
@@ -57,8 +66,8 @@ def split(ctx, dataset, verbose, progress, force):
             train_list.append(info)
 
     map_file = app_config.map_file[dataset]
-    train_file = map_file.format('train')
-    test_file = map_file.format('test')
+    train_file = map_file.format(file_type, 'train')
+    test_file = map_file.format(file_type, 'test')
 
     with open(train_file, 'wb') as trainf:
         pickle.dump(train_list, trainf)
