@@ -2,7 +2,7 @@
 import torch
 import numpy as np
 from torch import nn
-from src.models.ops import Normalize
+from src.models.ops import Normalize, act_fun
 
 
 class FCNet(nn.Module):
@@ -37,13 +37,13 @@ class FCNet(nn.Module):
             self.drop.append(nn.Dropout(p=self.drop_probs[i]))
 
             # Activation
-            self.act.append(nn.Dropout(p=self.drop_probs[i]))
+            self.act.append(act_fun(self.act_funs[i]))
 
             add_bias = True
 
-            # Layer Norm Initialization
+            # Norm Initialization
+            self.norm.append(Normalize(self.layer_dims[i]))
             if self.normalization:
-                self.norm.append(Normalize(current_input))
                 add_bias = False
 
             # Linear Operation
@@ -55,7 +55,8 @@ class FCNet(nn.Module):
             end = np.sqrt(0.01/(current_input + self.layer_dims[i]))
             self.wx[i].weight = torch.nn.Parameter(torch.Tensor(
                 self.layer_dims[i], current_input).uniform_(start, end))
-            self.wx[i].bias = torch.nn.Parameter(torch.zeros(self.layer_dims[i]))
+            self.wx[i].bias = torch.nn.Parameter(
+                torch.zeros(self.layer_dims[i]))
 
             current_input = self.layer_dims[i]
 
@@ -66,8 +67,8 @@ class FCNet(nn.Module):
         for i in range(self.num_layers):
             x = self.wx[i](x)
 
-            if self.normalization:
-                x = self.norm(self.normalization, x)
+            if self.normalization[i]:
+                x = self.norm[i](self.normalization[i], x)
 
             x = self.act[i](x)
 

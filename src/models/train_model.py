@@ -68,7 +68,7 @@ def validate_sincnet(hparams, dataset, model, progress, full=True):
         with torch.no_grad():
             probs = model(batch)
             preds = torch.max(probs, dim=1)[1]
-            loss = CeLoss(preds, target)
+            loss = CeLoss(probs, target)
             val, best_class = torch.max(torch.sum(probs, dim=0), 0)
             num_matches += (best_class == target[0]).float()
             accuracies.append(preds == target)

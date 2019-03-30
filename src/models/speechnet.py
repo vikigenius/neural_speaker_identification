@@ -14,6 +14,7 @@ class SpeechNet(nn.Module):
         self.cost = nn.NLLLoss()
         self.loss_obj = CELoss
         self._init_layers()
+        self.num_classes = hparams.num_classes
 
     def _init_layers(self):
         self.sincnet = SincNet(self.sincnet_params)

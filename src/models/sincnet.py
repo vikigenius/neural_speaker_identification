@@ -75,7 +75,7 @@ class SincNet(nn.Module):
             x = F.max_pool1d(x, self.max_pool_lens[i])
 
             if self.normalization[i]:
-                x = self.norm(self.normalization[i], x)
+                x = self.norm[i](self.normalization[i], x)
 
             x = self.act[i](x)
 

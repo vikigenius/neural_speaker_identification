@@ -11,13 +11,13 @@ class ProcessedRaw(object):
         self.max_chunks = max_chunks
 
     def _get_chunks(self, signal):
-        wlen = self.cwlen*self.sf
+        wlen = int(self.cwlen*self.sf)
         slen = signal.shape[0]
-        wshift = self.cwshift*self.sf
+        wshift = int(self.cwshift*self.sf)
 
         # split signals into chunks
         beg_samp = 0
-        end_samp = self.wlen
+        end_samp = wlen
 
         sig_arr = np.zeros((self.max_chunks, wlen))
         count_fr = 0

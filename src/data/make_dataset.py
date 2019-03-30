@@ -58,6 +58,9 @@ def split(ctx, dataset, raw, verbose, progress, force):
         # Compute Info
         pid = data_utils.get_pid(sgramfile)
         gender = meta_info['Gender'][pid]
+
+        gender = gender == 'm'
+
         info = SInfo(cid, gender, sgramfile)
 
         if idmap[cid] == thash:

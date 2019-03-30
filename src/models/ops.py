@@ -12,16 +12,27 @@ class Normalize(nn.Module):
         })
 
     def forward(self, norm_type, features):
-        y = self.norm[norm_type](features)
+        if norm_type not in self.norm:
+            y = features
+        else:
+            y = self.norm[norm_type](features)
         return y
+
+
+class Identity(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, x):
+        return x
 
 
 activations = {
     'relu': nn.ReLU(),
     'tanh': nn.Tanh(),
     'leaky_relu': nn.LeakyReLU(),
-    'softmax': nn.Softmax(),
-    'linear': lambda x: x
+    'softmax': nn.LogSoftmax(dim=1),
+    'linear': Identity()
 }
 
 

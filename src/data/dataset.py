@@ -75,13 +75,14 @@ class RawSpeechChunks(object):
         sinfo = self.spec_list[ridx]
         raw_chunks = self.raw_audio.load(sinfo.path)
         raw_chunks = torch.from_numpy(raw_chunks)
-        cids = torch.zeros_like(raw_chunks) + sinfo.cid
-        gids = torch.zeros_like(raw_chunks) + sinfo.gid
+        batch_size = raw_chunks.size(0)
+        cids = torch.zeros(batch_size) + sinfo.cid
+        gids = torch.zeros(batch_size) + sinfo.gid
 
         return {
-            'cid': cids,
-            'gid': gids,
-            'raw': raw_chunks
+            'cid': cids.long(),
+            'gid': gids.long(),
+            'raw': raw_chunks.float()
         }
 
     def __len__(self):
