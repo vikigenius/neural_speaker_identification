@@ -1,24 +1,7 @@
 #!/usr/bin/env python
-from dataclasses import dataclass
 from torch import nn
 from src.models.resnet_base import resnet50
-
-
-@dataclass
-class CELoss:
-    ce_loss: float = 0.0
-    num_obs: int = 0
-
-    def update(self, loss: 'CELoss'):
-        ce_loss = loss.ce_loss
-        n = self.num_obs
-        self.num_obs += 1
-        self.ce_loss = self.ce_loss*(n/(n+1)) + ce_loss/(n+1)
-
-    def pbardict(self):
-        return {
-            'ce_loss': format(self.ce_loss, '.4f')
-        }
+from src.models.ops import CELoss
 
 
 class ResnetM(nn.Module):

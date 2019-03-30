@@ -127,16 +127,16 @@ class SincConv_fast(nn.Module):
         I just have expanded the sinc and simplified the terms.
         This way I avoid several useless computations.
         """
-        band_pass_left = ((torch.sin(f_times_t_high)-torch.sin(f_times_t_low))/
-                          (self.n_/2))*self.window_
+        band_pass_left = ((torch.sin(f_times_t_high)-torch.sin(
+            f_times_t_low)) / (self.n_/2))*self.window_
 
-        band_pass_center = 2*band.view(-1,1)
+        band_pass_center = 2*band.view(-1, 1)
         band_pass_right = torch.flip(band_pass_left, dims=[1])
 
         band_pass = torch.cat(
             [band_pass_left, band_pass_center, band_pass_right], dim=1)
 
-        band_pass = band_pass / (2*band[:,None])
+        band_pass = band_pass / (2*band[:, None])
 
         self.filters = (band_pass).view(
             self.out_channels, 1, self.kernel_size)
