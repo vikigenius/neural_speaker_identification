@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 from torch import nn
-from src.models.FCNet import FCNet
+from src.models.fcnet import FCNet
 from src.models.sincnet import SincNet
 from src.models.ops import CELoss
 
@@ -13,6 +13,7 @@ class SpeechNet(nn.Module):
         self.class_params = hparams['class']
         self.cost = nn.NLLLoss()
         self.loss_obj = CELoss
+        self._init_layers()
 
     def _init_layers(self):
         self.sincnet = SincNet(self.sincnet_params)

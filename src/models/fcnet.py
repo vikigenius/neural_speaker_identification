@@ -25,6 +25,8 @@ class FCNet(nn.Module):
         self.act = nn.ModuleList([])
         self.drop = nn.ModuleList([])
 
+        self._init_layers()
+
     def _init_layers(self):
         if self.input_normalization:
             self.norm0 = Normalize(self.input_dim)

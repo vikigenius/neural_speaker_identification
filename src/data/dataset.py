@@ -65,7 +65,7 @@ class RawSpeechChunks(object):
 
         self.index = np.arange(len(self))
         if shuffle:
-            np.shuffle(self.index)
+            np.random.shuffle(self.index)
 
         self.batch_size = batch_size
         self.raw_audio = ProcessedRaw(16000.0, duration, overlap, batch_size)

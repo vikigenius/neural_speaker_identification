@@ -16,8 +16,10 @@ class Normalize(nn.Module):
 
 
 activations = {
-    'relu': nn.ReLU,
-    'tanh': nn.Tanh,
+    'relu': nn.ReLU(),
+    'tanh': nn.Tanh(),
+    'leaky_relu': nn.LeakyReLU(),
+    'softmax': nn.Softmax(),
     'linear': lambda x: x
 }
 

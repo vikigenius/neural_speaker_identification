@@ -2,7 +2,7 @@
 import torch
 import math
 import torch.nn.functional as F
-from toch import nn
+from torch import nn
 import numpy as np
 
 

@@ -10,6 +10,7 @@ class SincNet(nn.Module):
     def __init__(self, hparams):
         super().__init__()
 
+        self.sf = hparams['sf']
         self.num_filters = hparams['num_filters']
         self.filter_lens = hparams['filter_lens']
         self.max_pool_lens = hparams['max_pool_lens']
@@ -27,6 +28,7 @@ class SincNet(nn.Module):
 
         self.act = nn.ModuleList([])
         self.drop = nn.ModuleList([])
+        self._init_layers()
 
     def _init_layers(self):
         if self.input_normalization:
@@ -35,7 +37,7 @@ class SincNet(nn.Module):
         current_input = self.input_dim
 
         self.conv.append(SincConv_fast(
-            self.cnn_N_filt[0], self.cnn_len_filt[0], self.fs))
+            self.num_filters[0], self.filter_lens[0], self.sf))
 
         for i in range(self.num_layers):
             N_filt = int(self.num_filters[i])
@@ -46,7 +48,7 @@ class SincNet(nn.Module):
             self.drop.append(nn.Dropout(p=self.drop_probs[i]))
 
             # activation
-            self.act.append(act_fun[self.act_funs[i]])
+            self.act.append(act_fun(self.act_funs[i]))
 
             # layer norm initialization
             self.norm.append(nn.LayerNorm(
@@ -54,7 +56,7 @@ class SincNet(nn.Module):
 
             if i != 0:
                 self.conv.append(nn.Conv1d(
-                    self.cnn_N_filt[i-1], N_filt, filt_len))
+                    self.num_filters[i-1], N_filt, filt_len))
 
             current_input = int((current_input-filt_len+1)/max_pool_len)
 
@@ -73,8 +75,8 @@ class SincNet(nn.Module):
             x = torch.abs(self.conv[i](x))
             x = F.max_pool1d(x, self.max_pool_lens[i])
 
-            if self.normalization:
-                x = self.norm(self.normalization, x)
+            if self.normalization[i]:
+                x = self.norm(self.normalization[i], x)
 
             x = self.act[i](x)
 

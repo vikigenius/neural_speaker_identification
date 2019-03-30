@@ -36,29 +36,48 @@ class Trainer(object):
         self.save_model_path = os.path.join(self.save_path, ts)
         os.makedirs(self.save_model_path)
 
-    def setup_optimizers(self, resume: bool):
+    def _setup_adam(self, params):
+        raise NotImplementedError
+
+    def _setup_rmsprop(self, params):
+        lr = params['learning_rate']
+        alpha = params['alpha']
+        weight_decay = params['weight_decay']
+        self.optimizer = optim.RMSprop(
+            self.model.parameters(), lr=lr, alpha=alpha,
+            weight_decay=weight_decay)
+
+    def _setup_sgd(self, params):
+        param_optimizer = list(self.model.named_parameters())
+
+        no_decay = ['bias', 'bn', 'downsample.1']
+
+        optimizer_grouped_parameters = [
+                {
+                    'params': [
+                        p for n, p in param_optimizer if not any(
+                            nd in n for nd in no_decay)],
+                    'weight_decay': self.l2_coeff},
+                {
+                    'params': [p for n, p in param_optimizer if any(
+                        nd in n for nd in no_decay)], 'weight_decay': 0.0}
+                ]
+        self.optimizer = optim.SGD(
+            optimizer_grouped_parameters, lr=self.learning_rate,
+            momentum=0.9, weight_decay=self.l2_coeff)
+
+    def setup_optimizers(self, optimizer, params, resume: bool):
         if resume:
             self.optimizer = self.checkpoint['optimizer']
             self.scheduler = self.checkpoint['scheduler']
             self.epoch = self.checkpoint['epoch']
         else:
-            param_optimizer = list(self.model.named_parameters())
-
-            no_decay = ['bias', 'bn', 'downsample.1']
-
-            optimizer_grouped_parameters = [
-                    {
-                        'params': [
-                            p for n, p in param_optimizer if not any(
-                                nd in n for nd in no_decay)],
-                        'weight_decay': self.l2_coeff},
-                    {
-                        'params': [p for n, p in param_optimizer if any(
-                            nd in n for nd in no_decay)], 'weight_decay': 0.0}
-                    ]
-            self.optimizer = optim.SGD(
-                optimizer_grouped_parameters, lr=self.learning_rate,
-                momentum=0.9, weight_decay=self.l2_coeff)
+            if optimizer == 'adam':
+                self._setup_adam(params)
+            elif optimizer == 'sgd':
+                self._setup_rmsprop(params)
+            elif optimizer == 'rmsprop':
+                self._setup_rmsprop(params)
 
             self.scheduler = StepLR(self.optimizer, 1, gamma=self.sched_decay)
             self.epoch = 0

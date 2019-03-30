@@ -19,15 +19,41 @@ hparams:
   sample_freq: 16000
   l2_coeff: 0.0001
   num_classes: 1251
-  batch_size: 32
-  learning_rate: 0.005
-  epochs: 30
+  batch_size: 64
+  learning_rate: 0.001
+  epochs: 100
   adam_eps: 0.001
   sched_decay: 0.63095
-  val_step: 500
-  val_start: 499
+  val_step: 100000
+  val_start: 99999
   preprocess: True
+  duration: 1.0
+  overlap: 0.05
   cnn:
-    num_filter: [80, 60, 60]
+    sf: 16000
+    input_dim: 16000
+    num_filters: [80, 60, 60]
     filter_lens: [251, 5, 5]
     max_pool_lens: [3, 3, 3]
+    input_normalization: 'layer'
+    normalization: ['layer', 'layer', 'layer']
+    act_funs: ['relu', 'relu', 'relu']
+    drop_probs: [0.0, 0.0, 0.0]
+  dnn:
+    layer_dims: [2048, 2048]
+    input_normalization: 'layer'
+    normalization: ['batch', 'batch']
+    act_funs: ['leaky_relu', 'linear']
+    drop_probs: [0.0, 0.0, 0.0]
+  class:
+    layer_dims: [2048, 1251]
+    input_normalization: 'layer'
+    normalization: ['batch', None]
+    act_funs: ['relu', 'softmax']
+    drop_probs: [0.0, 0.0, 0.0]
+  optimizer:
+    name: 'rmsprop'
+    params:
+      learning_rate: 0.001
+      alpha: 0.95
+      weight_decay: 0.0

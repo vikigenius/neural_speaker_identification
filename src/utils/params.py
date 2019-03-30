@@ -14,3 +14,6 @@ class Params(object):
 
     def __setattr__(self, key, value):
         self._params[key] = value
+
+    def __getitem__(self, key):
+        return self._params[key]

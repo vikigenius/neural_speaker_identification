@@ -53,7 +53,11 @@ def validate_sincnet(hparams, dataset, model, progress, full=True):
 
     total_loss = 0.0
 
-    for batch in batches:
+    max_count = len(batches)
+    if not full:
+        max_count = 10
+
+    for i, batch in enumerate(batches):
         for k, v in batch.items():
             if torch.is_tensor(v):
                 batch[k] = torch_utils.to_var(v)
@@ -69,7 +73,7 @@ def validate_sincnet(hparams, dataset, model, progress, full=True):
             num_matches += (best_class == target[0]).float()
             accuracies.append(preds == target)
             total_loss += loss.detach()
-        if not full:
+        if i > max_count:
             break
     mean_loss = total_loss/len(batches)
     bmr = num_matches/len(batches)
@@ -128,7 +132,10 @@ def train(ctx, dataset, model_type, resume, progress, gender):
 
     if resume:
         trainer.load_checkpoint()
-    trainer.setup_optimizers(resume)
+
+    optimizer = hparams.optimizer['name']
+    params = hparams.optimizer['params']
+    trainer.setup_optimizers(optimizer, params, resume)
 
     for epoch in range(hparams.epochs):
         trainer.train(dataset, hparams.num_workers, data_loader,
