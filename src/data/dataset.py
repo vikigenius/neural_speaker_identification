@@ -15,7 +15,7 @@ class SInfo:
 
 
 class Spectrogram(Dataset):
-    def __init__(self, map_file: str, split: str):
+    def __init__(self, map_file: str):
         with open(map_file, 'rb') as f:
             self.spec_list = pickle.load(f)
 

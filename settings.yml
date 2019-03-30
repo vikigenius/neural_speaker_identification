@@ -27,3 +27,7 @@ hparams:
   val_step: 500
   val_start: 499
   preprocess: True
+  cnn:
+    num_filter: [80, 60, 60]
+    filter_lens: [251, 5, 5]
+    max_pool_lens: [3, 3, 3]

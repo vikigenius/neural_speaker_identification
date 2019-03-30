@@ -4,7 +4,7 @@ import torch
 import logging
 from functools import partial
 from torch.utils.data import DataLoader
-from src.data.dataset import Spectrogram
+from src.data.dataset import Spectrogram, RawSpeech
 from src.utils import training_utils
 from src.utils import torch_utils
 from src.models.resnet import ResnetM
@@ -46,22 +46,34 @@ def validate(hparams, dataset, model, progress, full=True):
 @click.command()
 @click.option('--dataset', default='VoxCeleb1',
               type=click.Choice(['VoxCeleb1', 'VoxCeleb2']))
+@click.option('--model_type', default='sincnet',
+              type=click.Choice(['sincnet', 'resnet']))
 @click.option('--resume', is_flag=True, help='Resume trainging from last ckpt')
 @click.option('--progress', is_flag=True, help='Show progress bar')
 @click.option('--gender', is_flag=True, help='Train Gender Classifier')
 @click.pass_context
-def train(ctx, dataset, resume, progress, gender):
+def train(ctx, dataset, model_type, resume, progress, gender):
     app_config = ctx.obj.app_config
     hparams = ctx.obj.hparams
 
     if gender:
         setattr(hparams, 'num_classes', 2)
 
+    if model_type == 'sincnet':
+        file_type = 'raw'
+        dset_class = RawSpeech
+        model_class = SincNet
+    else:
+        dset_class = Spectrogram
+        file_type = 'sgram'
+        model_class = ResnetM
+
     setattr(app_config, 'progress', progress)
 
-    train_map_file = app_config.map_file[dataset].format('train')
-    test_map_file = app_config.map_file[dataset].format('test')
-    dataset = Spectrogram(train_map_file, 'train')
+    train_map_file = app_config.map_file[dataset].format(file_type, 'train')
+    test_map_file = app_config.map_file[dataset].format(file_type, 'test')
+
+    dataset = dset_class(train_map_file)
 
     data_loader = DataLoader(
         dataset=dataset,
@@ -70,9 +82,9 @@ def train(ctx, dataset, resume, progress, gender):
         num_workers=hparams.num_workers
     )
 
-    val_dataset = Spectrogram(test_map_file, 'test')
+    val_dataset = dset_class(test_map_file)
 
-    model = ResnetM(hparams)
+    model = model_class(hparams)
     model.to(torch_utils.device)
 
     trainer = training_utils.Trainer(hparams, app_config, model)
