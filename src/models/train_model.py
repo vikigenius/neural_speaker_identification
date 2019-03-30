@@ -125,6 +125,12 @@ def train(ctx, dataset, model_type, resume, progress, gender):
         model = SpeechNet(hparams)
         validator = partial(validate_sincnet, hparams, val_dataset, model,
                             progress)
+        data_loader = DataLoader(
+            dataset,
+            batch_size=hparams.batch_size,
+            shuffle=True,
+            num_workers=app_config.num_workers
+        )
 
     model.to(torch_utils.device)
 

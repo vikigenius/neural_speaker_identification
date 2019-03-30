@@ -28,8 +28,7 @@ class FCNet(nn.Module):
         self._init_layers()
 
     def _init_layers(self):
-        if self.input_normalization:
-            self.norm0 = Normalize(self.input_dim)
+        self.norm0 = Normalize(self.input_dim)
 
         current_input = self.input_dim
 
@@ -56,7 +55,7 @@ class FCNet(nn.Module):
             end = np.sqrt(0.01/(current_input + self.layer_dims[i]))
             self.wx[i].weight = torch.nn.Parameter(torch.Tensor(
                 self.layer_dims[i], current_input).uniform_(start, end))
-            self.wx[i].bias = torch.nn.Parameter(torch.zeros(self.fc_lay[i]))
+            self.wx[i].bias = torch.nn.Parameter(torch.zeros(self.layer_dims[i]))
 
             current_input = self.layer_dims[i]
 

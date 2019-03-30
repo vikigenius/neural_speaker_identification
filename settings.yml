@@ -11,6 +11,7 @@ defaults:
   save_path: 'models/checkpoints/{}'
   save_format: '%Y-%b-%d-%H:%M:%S'
   num_classes: 1251
+  num_workers: 4
 hparams:
   window_size: 25
   window_shift: 10

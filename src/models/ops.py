@@ -11,8 +11,9 @@ class Normalize(nn.Module):
             'batch': nn.BatchNorm1d(num_features, momentum=0.05)
         })
 
-    def forward(self, features, norm_type):
-        return self.norm[norm_type](features)
+    def forward(self, norm_type, features):
+        y = self.norm[norm_type](features)
+        return y
 
 
 activations = {

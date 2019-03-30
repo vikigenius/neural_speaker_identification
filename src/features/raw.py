@@ -32,17 +32,17 @@ class ProcessedRaw(object):
 
     def _get_sample(self, signal):
         # Get Random Chunk
-        wlen = self.cwlen*self.sf
+        wlen = int(self.cwlen*self.sf)
         slen = signal.shape[0]
         offs = np.random.randint(slen - wlen)
-        raw_sample = signal[offs:]
+        raw_sample = signal[offs:offs+wlen]
         return raw_sample
 
     def load(self, path: str):
-        signal = librosa.load(path, sr=self.sf)
+        signal, _ = librosa.load(path, sr=self.sf)
 
         # Normalize
-        signal /= np.abs(signal)
+        signal /= np.abs(np.max(signal))
 
         if self.cwshift:
             return self._get_chunks(signal)

@@ -31,8 +31,7 @@ class SincNet(nn.Module):
         self._init_layers()
 
     def _init_layers(self):
-        if self.input_normalization:
-            self.norm0 = Normalize(self.input_dim)
+        self.norm0 = Normalize(self.input_dim)
 
         current_input = self.input_dim
 
@@ -51,7 +50,7 @@ class SincNet(nn.Module):
             self.act.append(act_fun(self.act_funs[i]))
 
             # layer norm initialization
-            self.norm.append(nn.LayerNorm(
+            self.norm.append(Normalize(
                 [N_filt, int((current_input-filt_len+1)/max_pool_len)]))
 
             if i != 0:
