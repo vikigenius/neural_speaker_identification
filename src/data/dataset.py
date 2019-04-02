@@ -25,7 +25,7 @@ class CelebSpeech(Dataset):
         with open(map_file, 'rb') as f:
             self.spec_list = pickle.load(f)
         self.tdur = tdur
-        self.processor = ProcessedRaw(16000.0, preprocess=False)
+        self.processor = ProcessedRaw(16000.0, preprocess=True)
 
     def __getitem__(self, idx):
         sinfo = self.spec_list[idx]

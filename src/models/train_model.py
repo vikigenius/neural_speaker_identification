@@ -133,7 +133,7 @@ def train(ctx, dataset, model_type, resume, progress, gender, ckpt,
         model = SpecNet(hparams.num_classes, hparams.sf,
                         hparams.win_size, hparams.hop_len)
         validator = partial(validate, hparams, val_dataset, model, progress)
-        optimizer_name = 'adam'
+        optimizer_name = 'sgd'
     else:
         dataset = RawSpeech(train_map_file, hparams.duration)
         val_dataset = RawSpeechChunks(test_map_file, hparams.duration,

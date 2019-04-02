@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 from torch import nn
 import torch
+import torch.nn.functional as F
 from src.models.resnet_base import resnet50
-from src.models.ops import CELoss
+from src.models.ops import CELoss, Identity
 from src.utils.math_utils import nextpow2
 from src.utils import torch_utils
 
@@ -12,7 +13,11 @@ class SpecNet(nn.Module):
                  window=torch.hamming_window):
         super().__init__()
         self.num_classes = num_classes
-        self.base = resnet50(num_classes=self.num_classes)
+        self.base = resnet50(pretrained=True)
+        self.base.fc = Identity()
+        self.base.avgpool = Identity()
+        self.fc = nn.Linear(9, 1)
+        self.classifier = nn.Linear(2048, num_classes)
         self.criterion = nn.CrossEntropyLoss()
         self.loss_obj = CELoss
         self.sf = sf
@@ -40,7 +45,16 @@ class SpecNet(nn.Module):
     def forward(self, batch):
         signal = batch['raw']
         spec = self.spectrogram(signal).unsqueeze(1)
-        return self.base(spec)
+        spec = spec.repeat(1, 3, 1, 1)  # Convert to RGB
+        resout = self.base(spec)
+        x = resout.permute(0, 1, 3, 2)
+        x = self.fc(x)
+        x = x.permute(0, 1, 3, 2)
+        width = x.size(3)
+        x = F.avg_pool2d(x, (1, width))
+        x = x.view(x.size(0), -1)
+        y = self.classifier(x)
+        return y
 
     def loss(self, model_outs, batch):
         if self.num_classes == 2:
