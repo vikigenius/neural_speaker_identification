@@ -13,23 +13,20 @@ defaults:
   num_classes: 1251
   num_workers: 4
 hparams:
-  window_size: 25
-  window_shift: 10
+  win_size: 25
+  hop_len: 10
   window_type: 'hann'
   num_workers: 1
-  sample_freq: 16000
-  l2_coeff: 0.0001
+  sf: 16000
   num_classes: 1251
-  batch_size: 128
-  learning_rate: 0.001
+  batch_size: 64
   epochs: 100
   adam_eps: 0.001
-  sched_decay: 0.63095
   val_step: 100000
   val_start: 99999
   preprocess: True
-  duration: 1.0
-  overlap: 0.05
+  duration: 3.0
+  overlap: 0.5
   cnn:
     sf: 16000
     input_dim: 16000
@@ -53,8 +50,19 @@ hparams:
     act_funs: ['relu', 'softmax']
     drop_probs: [0.0, 0.0, 0.0]
   optimizer:
-    name: 'rmsprop'
-    params:
-      learning_rate: 0.001
-      alpha: 0.95
-      weight_decay: 0.0
+    rmsprop:
+      params:
+        learning_rate: 0.001
+        alpha: 0.95
+        weight_decay: 0.0
+    sgd:
+      params:
+        init_lr: 1.0e-2
+        fin_lr: 1.0e-8
+        decay_schedule: 'logarithmic'
+        last_epoch: 30
+        weight_decay: 5.0e-4
+    adam:
+      params:
+        learning_rate: 0.001
+        weight_decay: 5.0e-4

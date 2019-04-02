@@ -91,4 +91,5 @@ target/
 
 # Special
 sync.sh
-
+casync.sh
+gsync.sh

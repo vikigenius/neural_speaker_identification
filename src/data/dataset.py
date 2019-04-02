@@ -14,20 +14,30 @@ class SInfo:
     path: str = ''
 
 
-class Spectrogram(Dataset):
-    def __init__(self, map_file: str):
+class CelebSpeech(Dataset):
+    def __init__(self, map_file: str, tdur=None):
+        """
+        Spectrogram Dataset
+        Args:
+            map_file: Path of raw audio
+            tdur: int, the duration to truncate it to
+        """
         with open(map_file, 'rb') as f:
             self.spec_list = pickle.load(f)
+        self.tdur = tdur
+        self.processor = ProcessedRaw(16000.0, preprocess=False)
 
     def __getitem__(self, idx):
         sinfo = self.spec_list[idx]
-        sgram = np.load(sinfo.path)
-        sgram -= np.mean(sgram, 1, keepdims=True)
-        sgram /= np.std(sgram, 1, keepdims=True)
+        path = sinfo.path
+        if self.tdur:
+            raw = self.processor.load_sample(path, self.tdur)
+        else:
+            raw = self.processor.load(path)
         return {
             'cid': sinfo.cid,
             'gid': sinfo.gid,
-            'sgram': sgram
+            'raw': raw,
         }
 
     def __len__(self):

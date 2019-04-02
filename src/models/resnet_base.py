@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import torch.nn as nn
+import torch.nn.functional as F
 import torch.utils.model_zoo as model_zoo
 
 
@@ -119,7 +120,6 @@ class ResNet(nn.Module):
         self.layer3 = self._make_layer(block, 256, layers[2], stride=2)
         self.layer4 = self._make_layer(block, 512, layers[3], stride=2)
         self.fc1 = nn.Linear(9, 1)
-        self.avgpool = nn.AvgPool2d((1, 10), stride=1)
         self.fc2 = nn.Linear(512 * block.expansion, num_classes)
 
         for m in self.modules():
@@ -172,7 +172,13 @@ class ResNet(nn.Module):
         x = x.permute(0, 1, 3, 2)
         x = self.fc1(x)
         x = x.permute(0, 1, 3, 2)
-        x = self.avgpool(x)
+
+        width = x.size(3)
+
+        # Now do average pooling
+        x = F.avg_pool2d(x, (1, width))
+        #
+        # x = self.avgpool(x)
         x = x.view(x.size(0), -1)
         x = self.fc2(x)
 

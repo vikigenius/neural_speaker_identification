@@ -4,10 +4,10 @@ import torch
 import logging
 from functools import partial
 from torch.utils.data import DataLoader
-from src.data.dataset import Spectrogram, RawSpeech, RawSpeechChunks
+from src.data.dataset import CelebSpeech, RawSpeech, RawSpeechChunks
 from src.utils import training_utils
 from src.utils import torch_utils
-from src.models.resnet import ResnetM
+from src.models.specnet import SpecNet
 from src.models.speechnet import SpeechNet
 
 
@@ -18,13 +18,19 @@ def validate(hparams, dataset, model, progress, full=True):
     logger.info('Performing Valitation')
     data_loader = DataLoader(
         dataset=dataset,
-        batch_size=hparams.batch_size,
+        batch_size=1,
         shuffle=not full,
+        pin_memory=True,
         num_workers=hparams.num_workers
     )
     correctness = []
+    losses = []
     CeLoss = torch.nn.CrossEntropyLoss()
     batches = data_loader
+    max_count = len(batches)
+    if not full:
+        max_count = 100
+    cur_count = 0
     for batch in batches:
         for k, v in batch.items():
             if torch.is_tensor(v):
@@ -37,9 +43,12 @@ def validate(hparams, dataset, model, progress, full=True):
             logits = model(batch)
             pred = logits.argmax(1)
             loss = CeLoss(logits, target)
+            losses.append(loss)
             correctness.append(pred == target)
-        if not full:
+        cur_count += 1
+        if cur_count == max_count:
             break
+    loss = sum(losses)/max_count
     acc = torch.cat(correctness).to(torch.float).mean()
     logger.info(f'Validation Acc = {acc}, Loss = {loss}')
 
@@ -55,7 +64,7 @@ def validate_sincnet(hparams, dataset, model, progress, full=True):
 
     max_count = len(batches)
     if not full:
-        max_count = 10
+        max_count = 100
 
     for i, batch in enumerate(batches):
         for k, v in batch.items():
@@ -75,8 +84,8 @@ def validate_sincnet(hparams, dataset, model, progress, full=True):
             total_loss += loss.detach()
         if i > max_count:
             break
-    mean_loss = total_loss/len(batches)
-    bmr = num_matches/len(batches)
+    mean_loss = total_loss/max_count
+    bmr = num_matches/max_count
     acc = torch.cat(accuracies).to(torch.float).mean()
     logger.info(f'Validation Acc = {acc}, Loss = {mean_loss}, BMR = {bmr}')
 
@@ -84,40 +93,47 @@ def validate_sincnet(hparams, dataset, model, progress, full=True):
 @click.command()
 @click.option('--dataset', default='VoxCeleb1',
               type=click.Choice(['VoxCeleb1', 'VoxCeleb2']))
-@click.option('--model_type', default='sincnet',
+@click.option('--model_type', default='resnet',
               type=click.Choice(['sincnet', 'resnet']))
 @click.option('--resume', is_flag=True, help='Resume trainging from last ckpt')
 @click.option('--progress', is_flag=True, help='Show progress bar')
 @click.option('--gender', is_flag=True, help='Train Gender Classifier')
+@click.option('--ckpt', type=click.Path(exists=True))
+@click.option('--duration', default=3.0,
+              help=('Duration of samples for training'))
 @click.pass_context
-def train(ctx, dataset, model_type, resume, progress, gender):
+def train(ctx, dataset, model_type, resume, progress, gender, ckpt,
+          duration):
     app_config = ctx.obj.app_config
     hparams = ctx.obj.hparams
 
     if gender:
         setattr(hparams, 'num_classes', 2)
 
-    file_type = 'raw' if model_type == 'sincnet' else 'sgram'
+    file_type = 'raw'
 
     setattr(app_config, 'progress', progress)
 
     train_map_file = app_config.map_file[dataset].format(file_type, 'train')
     test_map_file = app_config.map_file[dataset].format(file_type, 'test')
 
-    if model_type == 'sgram':
-        dataset = Spectrogram(train_map_file)
+    if model_type == 'resnet':
+        dataset = CelebSpeech(train_map_file, tdur=duration)
 
         data_loader = DataLoader(
             dataset=dataset,
             batch_size=hparams.batch_size,
             shuffle=True,
+            pin_memory=True,
             num_workers=hparams.num_workers
         )
 
-        val_dataset = Spectrogram(test_map_file)
+        val_dataset = CelebSpeech(test_map_file)
 
-        model = ResnetM(hparams)
+        model = SpecNet(hparams.num_classes, hparams.sf,
+                        hparams.win_size, hparams.hop_len)
         validator = partial(validate, hparams, val_dataset, model, progress)
+        optimizer_name = 'adam'
     else:
         dataset = RawSpeech(train_map_file, hparams.duration)
         val_dataset = RawSpeechChunks(test_map_file, hparams.duration,
@@ -129,19 +145,20 @@ def train(ctx, dataset, model_type, resume, progress, gender):
             dataset,
             batch_size=hparams.batch_size,
             shuffle=True,
+            pin_memory=True,
             num_workers=app_config.num_workers
         )
+        optimizer_name = 'rmsprop'
 
     model.to(torch_utils.device)
 
     trainer = training_utils.Trainer(hparams, app_config, model)
 
     if resume:
-        trainer.load_checkpoint()
+        trainer.load_checkpoint(ckpt)
 
-    optimizer = hparams.optimizer['name']
-    params = hparams.optimizer['params']
-    trainer.setup_optimizers(optimizer, params, resume)
+    params = hparams.optimizer[optimizer_name]['params']
+    trainer.setup_optimizers(optimizer_name, params, resume)
 
     for epoch in range(hparams.epochs):
         trainer.train(dataset, hparams.num_workers, data_loader,
