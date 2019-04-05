@@ -29,15 +29,15 @@ class ProcessedRaw(object):
         return signal
 
     def _get_chunks(self, signal, cwlen, cwshift, max_chunks):
-        wlen = int(self.cwlen*self.sf)
+        wlen = int(cwlen*self.sf)
         slen = signal.shape[0]
-        wshift = int(self.cwshift*self.sf)
+        wshift = int(cwshift*self.sf)
 
         # split signals into chunks
         beg_samp = 0
         end_samp = wlen
 
-        sig_arr = np.zeros((self.max_chunks, wlen))
+        sig_arr = np.zeros((max_chunks, wlen))
         count_fr = 0
 
         while end_samp < slen and count_fr < max_chunks:
@@ -73,4 +73,4 @@ class ProcessedRaw(object):
     def load_chunks(self, path: str, cwlen, cwshift,
                     max_chunks, normalize=False):
         signal = self.load(path)
-        return self._get_chunks(signal, cwlen, max_chunks)
+        return self._get_chunks(signal, cwlen, cwshift, max_chunks)

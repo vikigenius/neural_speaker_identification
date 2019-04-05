@@ -78,12 +78,15 @@ class RawSpeechChunks(object):
             np.random.shuffle(self.index)
 
         self.batch_size = batch_size
-        self.raw_audio = ProcessedRaw(16000.0, duration, overlap, batch_size)
+        self.duration = duration
+        self.overlap = overlap
+        self.raw_audio = ProcessedRaw(16000.0, preprocess=False)
 
     def __getitem__(self, idx):
         ridx = self.index[idx]
         sinfo = self.spec_list[ridx]
-        raw_chunks = self.raw_audio.load(sinfo.path)
+        raw_chunks = self.raw_audio.load_chunks(
+            sinfo.path, self.duration, self.overlap, self.batch_size)
         raw_chunks = torch.from_numpy(raw_chunks)
         batch_size = raw_chunks.size(0)
         cids = torch.zeros(batch_size) + sinfo.cid

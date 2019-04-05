@@ -62,7 +62,7 @@ hparams:
         decay_schedule: 'logarithmic'
         last_epoch: 30
         weight_decay: 5.0e-4
-        # decay_filters: ['bias', 'bn', 'downsample.1']
+        decay_filters: ['bias', 'bn', 'downsample.1']
     adam:
       params:
         learning_rate: 0.001

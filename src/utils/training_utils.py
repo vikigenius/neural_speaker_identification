@@ -149,9 +149,9 @@ class Trainer(object):
             upd, total = self.model.loss(model_outs, batch)
 
             self.optimizer.zero_grad()
-            assert total < 10.0, f'Step = {step}'
             total.backward()
-            assert total < 10.0, f'Step = {step}'
+
+            torch.nn.utils.clip_grad_norm_(self.model.parameters(), 5.0)
 
             self.optimizer.step()
 
