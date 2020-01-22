@@ -1,0 +1,34 @@
+#+TITLE:
+#+DATE:    January 21, 2020
+#+SINCE:   {replace with next tagged release version}
+#+STARTUP: inlineimages nofold
+
+* Table of Contents :TOC_3:noexport:
+- [[#description][Description]]
+- [[#prerequisites][Prerequisites]]
+- [[#usage][Usage]]
+
+* Description
+# A summary of what this module does.
+
++ ResNet based model for Speaker Identification
++ Evaluated on [[http://www.robots.ox.ac.uk/~vgg/data/voxceleb/vox1.html][VoxCeleb1]]
++ Uses spectrograms as features
+
+* Prerequisites
+See requirements.txt
+
+* Usage
+# How to configure this module, including common problems and how to addres
+# them.
++ Download VoxCeleb1 in data/raw
++ Build spectrograms and features using following command
+  #+BEGIN_SRC sh
+     python nsi.py --split=train --show-pbar
+  #+END_SRC
+
+  The features are stored in data/interim/VoxCeleb1
++ Train the model
+  #+BEGIN_SRC sh
+     python nsi.py train
+  #+END_SRC
