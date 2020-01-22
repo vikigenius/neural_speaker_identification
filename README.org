@@ -21,7 +21,8 @@ See requirements.txt
 * Usage
 # How to configure this module, including common problems and how to addres
 # them.
-Download VoxCeleb1 in data/raw
+Download VoxCeleb1 in data/raw. You should have a folder data/raw/VoxCeleb1
+
 Build spectrograms and features using following command
 #+BEGIN_SRC bash
 python nsi.py featuregen --split='train' --show-pbar
