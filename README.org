@@ -24,11 +24,11 @@ See requirements.txt
 + Download VoxCeleb1 in data/raw
 + Build spectrograms and features using following command
   #+BEGIN_SRC sh
-     python nsi.py --split=train --show-pbar
+python nsi.py --split=train --show-pbar
   #+END_SRC
 
   The features are stored in data/interim/VoxCeleb1
 + Train the model
   #+BEGIN_SRC sh
-     python nsi.py train
+python nsi.py train
   #+END_SRC
